@@ -10,6 +10,9 @@ import { create } from "zustand"
   // ㄴ zustand 는 상태를 다루기 위해 set, get을 제공
   // ㄴ 개발자는 create 를 이용해 set, get 을 전달받아 상태 관련 로직 객체를 작성한다
 
+// connect = 웹소켓 연결
+// deactivate = 연결 해제
+
 const useAppStore=create((set, get)=> ({
   username: undefined,
   role: undefined,
@@ -33,7 +36,7 @@ const useAppStore=create((set, get)=> ({
   checkAuth:async()=> {
     try {
       const prevUsername = get().username;
-      const res = await axios.post('/api/auth/check', {withCredentials:true});
+      const res = await axios.get('http://localhost:8080/api/auth/check', {withCredentials:true});
       const {username, role} = res.data;
 
       // zustand에서 이전값을 가지고 변경하는 경우가 아니라면 함수형 업데이트 불필요
@@ -43,7 +46,9 @@ const useAppStore=create((set, get)=> ({
       if(!prevUsername !== username)
       get().connectWebSocket();
     } catch(err) {
-      get().socket.deactivate();
+      if(get().socket)
+        // 연결을 끊어라
+        get().socket.deactivate();
       set({username:null, role:null, socket:null});
       console.log(err);
     }
@@ -57,7 +62,8 @@ const useAppStore=create((set, get)=> ({
 
   // 로그아웃 설정
   setLogout:()=> {
-    get().socket.deactivate();
+    if(get().socket)
+      get().socket.deactivate();
     set({username:null, role:null, socket:null});
   },
 }));
